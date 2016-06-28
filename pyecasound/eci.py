@@ -10,7 +10,6 @@ some updates by Janne Halttunen
 from __future__ import print_function
 
 import pyeca as _pyeca
-import types as _types
 
 class ECIError(Exception):
     def __init__(self, what):
@@ -44,7 +43,7 @@ class ECI:
         if f != None:
             self.e.command_float_arg(cmd, f)
         else:
-            if type(cmd) == _types.ListType or type(cmd) == _types.TupleType:
+            if isinstance(cmd, list) or isinstance(cmd, tuple):
                 v = None
                 for c in cmd:
                     v = self(c)
