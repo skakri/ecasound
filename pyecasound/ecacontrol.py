@@ -11,7 +11,6 @@ import subprocess
 from select import select
 import os
 import signal
-import string
 import time
 
 authors = """Kai Vehmanen, Eric S. Tiedemann and Janne Halttunen."""
@@ -25,8 +24,8 @@ if sys.hexversion < 0x02040000:
 
 _ecasound = []
 
-type_override={}
-eci_str_sync_lost= 'Connection to the processing engine was lost.\n'
+type_override = {}
+eci_str_sync_lost = 'Connection to the processing engine was lost.\n'
 
 
 class ECA_CONTROL_INTERFACE:
@@ -47,18 +46,18 @@ class ECA_CONTROL_INTERFACE:
         if f:
             val = self.command_float_arg(cmd, f)
         else:
-            cmds = string.split(cmd, '\n')
+            cmds = cmd.split('\n')
             if len(cmds) > 1:
                 v = []
                 for c in cmds:
-                    c = string.strip(c)
+                    c = c.strip()
                     if c:
                         v.append(self.command(c))
                     
                         if self.error():
                             raise Exception(v[-1])
-                    
-                val = string.join(map(str, v), '\n')
+
+                val = str.join('\n', map(str, v))
             else:
                 val = self.command(cmd)
                     
@@ -68,12 +67,12 @@ class ECA_CONTROL_INTERFACE:
         return val            
 
     def _readline(self):
-        return string.strip(self.eca.stdout.readline())
+        return self.eca.stdout.readline().strip().decode('utf-8')
         
     def _read_eca(self):
         buffer = ''
         while select([self.eca.stdout.fileno()], [], [self.eca.stdout.fileno()], 0.01)[0]:
-            buffer += self.eca.stdout.read(1)
+            buffer += self.eca.stdout.read(1).decode('utf-8')
         return buffer
     
     def _parse_response(self):
@@ -120,17 +119,19 @@ class ECA_CONTROL_INTERFACE:
                 self._type = type_override[self._cmd]
             
             if self._type == 'S':
-                    self._resp[self._type] = string.split(r[1], ',')
+                self._resp[self._type] = r[1].split(',')
             elif self._type == 'Sn':
-                    self._resp[self._type] = string.split(r[1], '\n')
+                self._resp[self._type] = r[1].split('\n')
             elif self._type == 'f':
-                    self._resp[self._type] = float(r[1])
+                self._resp[self._type] = float(r[1])
             elif self._type == 'i':
-                    self._resp[self._type] = int(r[1])
+                self._resp[self._type] = int(r[1])
             elif self._type == 'li':
-                    self._resp[self._type] = long(r[1])
+                # Python 2 will correctly cast to long;
+                # in Python 3 there is only one integer type -- int.
+                self._resp[self._type] = int(r[1])
             else:
-                    self._resp[self._type] = r[1]
+                self._resp[self._type] = r[1]
 
         return self._resp[self._type]
 
@@ -156,7 +157,7 @@ class ECA_CONTROL_INTERFACE:
 
         version = self._readline()
             
-        s = string.find(version, 'ecasound v')
+        s = version.find('ecasound v')
 
         if float(version[s+10:s+13]) >= 2.2:
             lines = lines + version+'\n'
@@ -178,7 +179,7 @@ class ECA_CONTROL_INTERFACE:
     def cleanup(self):
         """Free all reserved resources"""
         
-        self.eca.stdin.write('quit\n')
+        self.eca.stdin.write('quit\n'.encode('utf-8'))
 
         os.kill(self.eca.pid, signal.SIGTERM)
                 
@@ -196,11 +197,13 @@ class ECA_CONTROL_INTERFACE:
     def command(self, cmd):
         """Issue an EIAM command"""
         
-        cmd = string.strip(cmd)
+        cmd = cmd.strip()
 
         if cmd:
             self._cmd = cmd
-            self.eca.stdin.write(cmd + '\n')
+            cmd += '\n'
+
+            self.eca.stdin.write(cmd.encode('utf-8'))
             return self._parse_response()
         
     def command_float_arg(self, cmd, f=None):
@@ -209,14 +212,17 @@ class ECA_CONTROL_INTERFACE:
         This function can be used instead of command(string), 
         if the command in question requires exactly one numerical parameter."""
         
-        cmd = string.strip(cmd)
+        cmd = cmd.strip()
 
         if cmd:
             self._cmd = cmd
             if f:
-                self.eca.stdin.write('%s %f\n' % (cmd, f))
+                cmd = '%s %f\n' % (cmd, f)
             else:
-                self.eca.stdin.write(cmd + '\n')
+                cmd += '\n'
+
+            self.eca.stdin.write(cmd.encode('utf-8'))
+
             return self._parse_response()
             
     def error(self):
@@ -323,7 +329,7 @@ def parse_eiam_response(st, m=None):
 class base:
     def __init__(self, eci, cmd):
         self.eci = eci
-        self.cmd = string.replace(cmd, '_', '-')
+        self.cmd = cmd.replace('_', '-')
 
     def __call__(self, *args):
         return self.eci(self.cmd)
@@ -340,8 +346,8 @@ class EIAM:
         self._cmds = self._eci('int-cmd-list')
 
         for c in self._cmds:
-            c = string.replace(c, '-', '_')
-            if string.count(c, 'add') or string.count(c, 'select'):
+            c = c.replace('-', '_')
+            if c.count('add') or c.count('select'):
                 self.__dict__[c] = string_argument(self._eci, c)
             else:
                 self.__dict__[c] = base(self._eci, c)
