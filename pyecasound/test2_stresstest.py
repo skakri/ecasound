@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 # -----------------------------------------------------------------------
 # A second stress test for the pyeca interface
@@ -7,7 +8,6 @@
 # Licensed under GPL. See the file 'COPYING' for more information.
 # -----------------------------------------------------------------------
 
-import time
 import sys
 import os
 
@@ -18,10 +18,10 @@ import os
 from pyeca import *
 
 # test the native Python implementation
-#from ecacontrol import *
+# from ecacontrol import *
 
 # test the C implementation
-#from pyecasound import *
+# from pyecasound import *
 
 # ---
 # configuration variables
@@ -62,7 +62,8 @@ total_cmds = 0
 while 1 and e.last_type() != 'e':
     e.command("get-position")
     curpos = e.last_float()
-    if curpos > runlen or e.last_type() == 'e': break
+    if curpos > runlen or e.last_type() == 'e':
+        break
 
     if debuglevel > 0:
         sys.stderr.write('.')
@@ -76,7 +77,7 @@ while 1 and e.last_type() != 'e':
     total_cmds = total_cmds + 4
 
 if e.last_type() == 'e':
-    print 'Ended to error:', e.last_error()
+    print('Ended to error: %s' % e.last_error())
     result = -1
 else:
     e.command("stop")

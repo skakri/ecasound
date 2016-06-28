@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-
+# coding=utf-8
 # -----------------------------------------------------------------------
 # Implementation of the following:
-# 
-# 1. Setup ECI to read audio from file, apply a 100Hz lowpass filter, and 
+#
+# 1. Setup ECI to read audio from file, apply a 100Hz lowpass filter, and
 #    send it to the soundcard (/dev/dsp).
 # 2. Every second, check the current position. If the stream has
 #    been running for over 15 seconds, exit immediately. Also,
 #    every second, increase the lowpass filter's cutoff frequency
 #    by 500Hz.
-# 3. Stop the stream (if not already finished) and disconnect the 
+# 3. Stop the stream (if not already finished) and disconnect the
 #    chainsetup. Print chain operator status info.
 # -----------------------------------------------------------------------
 
@@ -29,7 +29,8 @@ cutoff_inc = 500.0
 while 1:
     time.sleep(1)
     e.command("engine-status")
-    if e.last_string() != "running": break
+    if e.last_string() != "running":
+        break
     e.command("get-position")
     curpos = e.last_float()
     if curpos > 15: break
@@ -39,4 +40,4 @@ while 1:
 e.command("stop")
 e.command("cs-disconnect")
 e.command("cop-status")
-print "Chain operator status: ", e.last_string()
+print("Chain operator status: %s" % e.last_string())
