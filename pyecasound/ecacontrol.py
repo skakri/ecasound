@@ -28,256 +28,254 @@ _ecasound = []
 type_override={}
 eci_str_sync_lost= 'Connection to the processing engine was lost.\n'
 
+
 class ECA_CONTROL_INTERFACE:
-    
-    def __init__(I, verbose=1):
+    def __init__(self, verbose=1):
         """Instantiate new ECI session
         
         verbose: set this false to get rid of startup-messages
         """
 
-        I.verbose=verbose
-        I._cmd=''
-        I._type=''
-        I._timeout=5 # in seconds
-        I._resp={}
-        I.initialize()
+        self.verbose = verbose
+        self._cmd = ''
+        self._type = ''
+        self._timeout = 5  # in seconds
+        self._resp = {}
+        self.initialize()
         
-    def __call__(I, cmd, f=None):
-        if f != None:
-            val=I.command_float_arg(cmd, f)
+    def __call__(self, cmd, f=None):
+        if f:
+            val = self.command_float_arg(cmd, f)
         else:
-            cmds=string.split(cmd, '\n')
+            cmds = string.split(cmd, '\n')
             if len(cmds) > 1:
-                v=[]
+                v = []
                 for c in cmds:
-                    c=string.strip(c)
+                    c = string.strip(c)
                     if c:
-                        v.append(I.command(c))
+                        v.append(self.command(c))
                     
-                        if I.error():
+                        if self.error():
                             raise Exception(v[-1])
                     
-                val=string.join(map(str, v), '\n')
+                val = string.join(map(str, v), '\n')
             else:
-                val=I.command(cmd)
+                val = self.command(cmd)
                     
-        if I.error():
+        if self.error():
             raise Exception(val)
         
         return val            
 
-    def _readline(I):
-        return string.strip(I.eca.stdout.readline())
+    def _readline(self):
+        return string.strip(self.eca.stdout.readline())
         
-    def _read_eca(I):
-        buffer=''
-        while select([I.eca.stdout.fileno()],[],[I.eca.stdout.fileno()],0.01)[0]:
-           buffer=buffer+I.eca.stdout.read(1)
+    def _read_eca(self):
+        buffer = ''
+        while select([self.eca.stdout.fileno()], [], [self.eca.stdout.fileno()], 0.01)[0]:
+            buffer += self.eca.stdout.read(1)
         return buffer
     
-    def _parse_response(I):
-        tm=''; r=(); failcount=0
-        if I.verbose > 2:
-            print 'c=' + I._cmd
+    def _parse_response(self):
+        tm = ''
+        r = ()
+        fail_count = 0
+
+        if self.verbose > 2:
+            print('c=%s' % self._cmd)
+
         while 1:
-            
-            s=I._read_eca()
-            #print 'read s=' + s
+            s = self._read_eca()
+            # print('read s=%s' % s)
             if s:
-                if I.verbose > 3:
-                    print 's=<', s, '>'
+                if self.verbose > 3:
+                    print('s=<%s>' % s)
             else:
-                failcount = failcount + 1
-                if failcount < I._timeout * 10:
-                #if failcount < 0:
+                fail_count += 1
+                if fail_count < self._timeout * 10:
+                    # if failcount < 0:
                     time.sleep(0.01)
                     continue
                 else:
-                    print 'timeout: s=<' + s, '>, cmd=' + I._cmd + '.'
-                    r=('e', eci_str_sync_lost)
+                    print('timeout: s=<%s>, cmd=%s.' % (s, self._cmd))
+                    r = ('e', eci_str_sync_lost)
                     break
-            tm=tm+s
-            m=expand_eiam_response(tm)
-            r=parse_eiam_response(tm, m)
+            tm += s
+            m = expand_eiam_response(tm)
+            r = parse_eiam_response(tm, m)
+
             if r:
-                if I.verbose > 2:
-                    print 'r=', r
+                if self.verbose > 2:
+                    print('r=%s' % r)
                 break
 
         if not r:
-            I._resp['e']='-'            
-            I._type='e'
-            r=None
+            self._resp['e'] = '-'
+            self._type = 'e'
+            r = None
         else:
-            I._type=r[0]
+            self._type = r[0]
             
-            if I._cmd in type_override.keys():
-                I._type=type_override[I._cmd]
+            if self._cmd in type_override.keys():
+                self._type = type_override[self._cmd]
             
-            if I._type == 'S':
-                    I._resp[I._type]=string.split(r[1], ',')            
-            elif I._type == 'Sn':
-                    I._resp[I._type]=string.split(r[1], '\n')
-            elif I._type == 'f':
-                    I._resp[I._type]=float(r[1])
-            elif I._type == 'i':
-                    I._resp[I._type]=int(r[1])
-            elif I._type == 'li':
-                    I._resp[I._type]=long(r[1])
+            if self._type == 'S':
+                    self._resp[self._type] = string.split(r[1], ',')
+            elif self._type == 'Sn':
+                    self._resp[self._type] = string.split(r[1], '\n')
+            elif self._type == 'f':
+                    self._resp[self._type] = float(r[1])
+            elif self._type == 'i':
+                    self._resp[self._type] = int(r[1])
+            elif self._type == 'li':
+                    self._resp[self._type] = long(r[1])
             else:
-                    I._resp[I._type]=r[1]
+                    self._resp[self._type] = r[1]
 
-        return I._resp[I._type]
+        return self._resp[self._type]
 
-    
-    def initialize(I):
+    def initialize(self):
         """Reserve resources"""
                 
-##        if _ecasound is not None:
-##            I.cleanup()             # exit previous ecasound session cleanly
+        # if_ecasound is not None:
+        #     self.cleanup()  # exit previous ecasound session cleanly
            
         global _ecasound
 
-        try:
-            ecasound_binary = os.environ['ECASOUND']
-        except KeyError:
-            ecasound_binary = ''
-
-        if ecasound_binary == '':
-            ecasound_binary = 'ecasound'
+        ecasound_binary = os.environ.get('ECASOUND', 'ecasound')
 
         p = subprocess.Popen(ecasound_binary + ' -c -d:256 2>/dev/null',
                              shell=True, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
         _ecasound.append(p)
         
-        I.eca=_ecasound[-1]
+        self.eca = _ecasound[-1]
         
-        lines=''
+        lines = ''
         
-        lines=lines+I._readline()+'\n'
+        lines = lines + self._readline() + '\n'
 
-        version=I._readline()
+        version = self._readline()
             
-        s=string.find(version, 'ecasound v')
-        if float(version[s+10:s+13])>=2.2:
-            lines=lines+version+'\n'
+        s = string.find(version, 'ecasound v')
+
+        if float(version[s+10:s+13]) >= 2.2:
+            lines = lines + version+'\n'
         else:
             raise RuntimeError('ecasound version 2.2 required!')
         
-        lines=lines+I._readline()+'\n'
+        lines = lines + self._readline() + '\n'
         
-        if I.verbose:
-            print lines
-            print __doc__
-            print 'by', authors
-            print '\n(to get rid of this message, pass zero to instance init)'
+        if self.verbose:
+            print(lines)
+            print(__doc__)
+            print('by %s' % authors)
+            print('\n(to get rid of this message, pass zero to instance init)')
             
-        I.command('int-output-mode-wellformed')
-        #I._read_eca()
-        #I.command('debug 256')
+        self.command('int-output-mode-wellformed')
+        # self._read_eca()
+        # self.command('debug 256')
         
-    def cleanup(I):
+    def cleanup(self):
         """Free all reserved resources"""
         
-        I.eca.stdin.write('quit\n')
+        self.eca.stdin.write('quit\n')
 
-        os.kill(I.eca.pid, signal.SIGTERM)
+        os.kill(self.eca.pid, signal.SIGTERM)
                 
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(2)
         
         try:
-            return I.eca.wait()
+            return self.eca.wait()
         except:
             pass
         
         signal.alarm(0)
-        os.kill(I.eca.pid, signal.SIGKILL)
-        
-        
-    def command(I,cmd):
+        os.kill(self.eca.pid, signal.SIGKILL)
+
+    def command(self, cmd):
         """Issue an EIAM command"""
         
-        cmd=string.strip(cmd)
+        cmd = string.strip(cmd)
+
         if cmd:
-            I._cmd=cmd
-            I.eca.stdin.write(cmd+'\n')
-            return I._parse_response()
+            self._cmd = cmd
+            self.eca.stdin.write(cmd + '\n')
+            return self._parse_response()
         
-    def command_float_arg(I,cmd,f=None):
+    def command_float_arg(self, cmd, f=None):
         """Issue an EIAM command
         
         This function can be used instead of command(string), 
         if the command in question requires exactly one numerical parameter."""
         
-        cmd=string.strip(cmd)
+        cmd = string.strip(cmd)
+
         if cmd:
-            I._cmd=cmd
+            self._cmd = cmd
             if f:
-                    I.eca.stdin.write('%s %f\n' % (cmd,f))
+                self.eca.stdin.write('%s %f\n' % (cmd, f))
             else:
-                    I.eca.stdin.write(cmd+'\n')
-            return I._parse_response()
+                self.eca.stdin.write(cmd + '\n')
+            return self._parse_response()
             
-    def error(I):
+    def error(self):
         """Return true if error has occured during the execution of last EIAM command"""
+        return self._type == 'e'
         
-        if I._type=='e': return 1
-        
-    def last_error(I):
+    def last_error(self):
         """Return a string describing the last error"""
         
-        if I.error():
-            return I._resp.get('e')
+        if self.error():
+            return self._resp.get('e')
         else: 
             return ''
         
-    def last_float(I):
+    def last_float(self):
         """Return the last floating-point return value"""
-        return I._resp.get('f')
+        return self._resp.get('f')
     
-    def last_integer(I):
+    def last_integer(self):
         """Return the last integer return value
         
         This function is also used to return boolean values."""
-        return I._resp.get('i')
+        return self._resp.get('i')
     
-    def last_long_integer(I):
+    def last_long_integer(self):
         """Return the last long integer return value
         
         Long integers are used to pass values like 'length_in_samples' 
         and 'length_in_bytes'.  It's implementation specific whether there's 
         any real difference between integers and long integers."""
-        return I._resp.get('li')
+        return self._resp.get('li')
     
-    def last_string(I):
+    def last_string(self):
         """Return the last string return value"""
-        return I._resp.get('s')
+        return self._resp.get('s')
     
-    def last_string_list(I):
+    def last_string_list(self):
         """Return the last collection of strings (one or more strings)"""
-        return I._resp.get('S')
+        return self._resp.get('S')
     
-    def last_type(I):
-        return I._type
+    def last_type(self):
+        return self._type
     
-    def current_event(I):
+    def current_event(self):
         """** not implemented **"""
-        pass
-    def events_available(I): 
+
+    def events_available(self):
         """** not implemented **"""
-        pass
-    def next_event(I): 
+
+    def next_event(self):
         """** not implemented **"""
-        pass
 
 
 def handler(*args):
     print('AARGH!')
     raise Exception('killing me not so softly')
 
-expand=re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)\r\n\r\n.*', re.MULTILINE | re.S)
+expand = re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)\r\n\r\n.*', re.MULTILINE | re.S)
+
 
 def expand_eiam_response(st):
     """Checks wheter 'str' is a valid EIAM response.
@@ -288,7 +286,8 @@ def expand_eiam_response(st):
     m = expand.search(st)
     return m
 
-parse=re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)', re.MULTILINE | re.S)
+parse = re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)', re.MULTILINE | re.S)
+
 
 def parse_eiam_response(st, m=None):
     """Parses a valid EIAM response.
@@ -306,48 +305,50 @@ def parse_eiam_response(st, m=None):
 
     if m and len(m.groups()) == 0:
         # print("(pyeca) Matching groups failed: %s" % str(m.groups()))
-        return ('e','Matching groups failed')
+        return 'e', 'Matching groups failed'
 
     if m and len(m.groups()) == 3:
         # print('received=%s, expected=%s' % (len(m.group(3)), m.group(1)))
         if int(m.group(1)) != len(m.group(3)):
             print('(pyeca) Response length error. Received %s, expected for %s.' % (len(m.group(3)), m.group(1)))
             # print('g=%s' % m.group(3))
-            return ('e', 'Response length error.')
+            return 'e', 'Response length error.'
 
     if m:
         return (m.group(2), m.group(3))
 
-    return ('e','')
+    return 'e',''
 
 
 class base:
-    def __init__(I, eci, cmd):
-        I.eci=eci
-        I.cmd=string.replace(cmd, '_', '-')
+    def __init__(self, eci, cmd):
+        self.eci = eci
+        self.cmd = string.replace(cmd, '_', '-')
 
-    def __call__(I):
-        return I.eci(I.cmd)
+    def __call__(self, *args):
+        return self.eci(self.cmd)
+
 
 class string_argument(base):
-    def __call__(I, s):
-        return I.eci('%s %s' % (I.cmd,s))
+    def __call__(self, s):
+        return self.eci('%s %s' % (self.cmd, s))
+
 
 class EIAM:
-    def __init__(I, verbose=0):
-        I._eci=ECA_CONTROL_INTERFACE(verbose)
-        I._cmds=I._eci('int-cmd-list')
+    def __init__(self, verbose=0):
+        self._eci = ECA_CONTROL_INTERFACE(verbose)
+        self._cmds = self._eci('int-cmd-list')
 
-        for c in I._cmds:
-            c=string.replace(c, '-', '_')
-            if string.count(c, 'add') \
-            or string.count(c, 'select'):
-                I.__dict__[c]=string_argument(I._eci,c)
+        for c in self._cmds:
+            c = string.replace(c, '-', '_')
+            if string.count(c, 'add') or string.count(c, 'select'):
+                self.__dict__[c] = string_argument(self._eci, c)
             else:
-                I.__dict__[c]=base(I._eci,c)
+                self.__dict__[c] = base(self._eci, c)
+
 
 def main():
-    e=ECA_CONTROL_INTERFACE()
+    e = ECA_CONTROL_INTERFACE()
     print(e.command('c-add huppaa'))
     print(e.command('c-list'))
 

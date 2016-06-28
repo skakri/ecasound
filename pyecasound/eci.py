@@ -38,7 +38,7 @@ class ECI:
     """
 
     def __init__(self, *args):
-        self.e = apply(_pyeca.ECA_CONTROL_INTERFACE, args)
+        self.e = _pyeca.ECA_CONTROL_INTERFACE(*args)
 
     def __call__(self, cmd, f=None):
         if f != None:
@@ -72,10 +72,10 @@ class ECI:
             return self.e.last_integer()
         elif t == 'li':
             return self.e.last_long_integer()
-	elif t == 'e' or self.e.error():
-	    raise ECIError, '%s: %s' % (self.e.last_error(), cmd)
+        elif t == 'e' or self.e.error():
+            raise ECIError('%s: %s' % (self.e.last_error(), cmd))
         else:
-            raise ECIError, "unknown return type '%s'!" % t
+            raise ECIError("unknown return type '%s'!" % t)
 
 if __name__ == '__main__':
     import time, sys
