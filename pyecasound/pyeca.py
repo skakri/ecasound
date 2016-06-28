@@ -1,3 +1,4 @@
+# coding=utf-8
 """Wrapper module which loads pyecasound
 (python module for Ecasound Control Interface).
 
@@ -22,27 +23,22 @@ Quote from python docs:
 --cut--
 
 
-Otherwise falling back to native python version (possibly slower float-handling).
+Otherwise falling back to native python version
+(possibly slower float-handling).
 """
 
 import sys
 
-if hasattr(sys, 'version_info'): # attribute available from python 2.0
-    if sys.version_info[1] >=2:
+if hasattr(sys, 'version_info'):  # attribute available from python 2.0
+    if sys.version_info[0] == 2 and sys.version_info[1] >= 2:
         try:
-            import dl
-            sys.setdlopenflags(dl.RTLD_LAZY|dl.RTLD_GLOBAL)
-            from pyecasound import *
-        except:
-            pass
+            import dl as DLFCN
+        except ImportError:
+            import DLFCN
 
         try:
-            import DLFCN
-            sys.setdlopenflags(DLFCN.RTLD_LAZY|DLFCN.RTLD_GLOBAL)
-            from pyecasound import *
-        except:
-            from ecacontrol import *
-    else:
-        from ecacontrol import *
-else:
-    from ecacontrol import *
+            sys.setdlopenflags(DLFCN.RTLD_LAZY | DLFCN.RTLD_GLOBAL)
+        except (TypeError, AttributeError):
+            pass
+
+from ecacontrol import *
