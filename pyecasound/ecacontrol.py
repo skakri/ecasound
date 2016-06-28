@@ -1,15 +1,11 @@
+# coding=utf-8
 """Native python ECI (ecasound control interface) implementation
 
    Can be used to replace the C implementation 'pyecasound.so'.
 """
 
-authors="""Kai Vehmanen, Eric S. Tiedemann and Janne Halttunen."""
-
+from __future__ import print_function
 import sys
-if sys.hexversion < 0x02040000:
-    print >>sys.stderr, "ERROR: Python 2.4 or newer is required by ecacontrol.py"
-    sys.exit(-1)
-
 import re
 import subprocess
 from select import select
@@ -18,7 +14,16 @@ import signal
 import string
 import time
 
-_ecasound=[]
+authors = """Kai Vehmanen, Eric S. Tiedemann and Janne Halttunen."""
+
+if sys.hexversion < 0x02040000:
+    print(
+        "ERROR: Python 2.4 or newer is required by ecacontrol.py",
+        file=sys.stderr
+    )
+    sys.exit(-1)
+
+_ecasound = []
 
 type_override={}
 eci_str_sync_lost= 'Connection to the processing engine was lost.\n'
@@ -269,8 +274,8 @@ class ECA_CONTROL_INTERFACE:
 
 
 def handler(*args):
-    print 'AARGH!'
-    raise Exception, 'killing me not so softly'
+    print('AARGH!')
+    raise Exception('killing me not so softly')
 
 expand=re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)\r\n\r\n.*', re.MULTILINE | re.S)
 
@@ -300,14 +305,14 @@ def parse_eiam_response(st, m=None):
             return ()
 
     if m and len(m.groups()) == 0:
-        #print "(pyeca) Matching groups failed: %s" % str(m.groups())
+        # print("(pyeca) Matching groups failed: %s" % str(m.groups()))
         return ('e','Matching groups failed')
 
     if m and len(m.groups()) == 3:
-        #print 'received=', len(m.group(3)), ', expected=', m.group(1)
+        # print('received=%s, expected=%s' % (len(m.group(3)), m.group(1)))
         if int(m.group(1)) != len(m.group(3)):
-            print '(pyeca) Response length error. Received ', len(m.group(3)), ', expected for ', m.group(1), '.'
-            #print 'g=', m.group(3)
+            print('(pyeca) Response length error. Received %s, expected for %s.' % (len(m.group(3)), m.group(1)))
+            # print('g=%s' % m.group(3))
             return ('e', 'Response length error.')
 
     if m:
@@ -343,16 +348,18 @@ class EIAM:
 
 def main():
     e=ECA_CONTROL_INTERFACE()
-    print e.command('c-add huppaa')
-    print e.command('c-list')
+    print(e.command('c-add huppaa'))
+    print(e.command('c-list'))
 
-    print e("""
+    print(
+        e("""
 
-    c-list
-    c-status
-    """)
+        c-list
+        c-status
+        """)
+    )
 
-    print e.cleanup()
+    print(e.cleanup())
 
 if __name__ == '__main__':
     main()

@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 # eci.ECI -- A higher-level interface to pyeca.
 # Copyright 2001 Eric S. Tiedemann (est@hyperreal.org)
@@ -5,6 +6,8 @@
 
 some updates by Janne Halttunen
 """
+
+from __future__ import print_function
 
 import pyeca as _pyeca
 import types as _types
@@ -28,12 +31,12 @@ class ECI:
     The value of a command (or of the last command in a sequence)
     if returned as a value of the appropriate Python type
     (possibly None).
-    
+
     On errors, an ECIException is raised that has a `what'
     member with the exception message.  These exceptions also
     stringify prettily.
     """
-    
+
     def __init__(self, *args):
         self.e = apply(_pyeca.ECA_CONTROL_INTERFACE, args)
 
@@ -55,7 +58,7 @@ class ECI:
                     return v
                 else:
                     self.e.command(cmd)
-            
+
         t = self.e.last_type()
         if not t or t == '-':
             return None
@@ -82,7 +85,7 @@ if __name__ == '__main__':
 
     # uncomment to raise an error :)
     #e('foo')
-    
+
     e("""
     cs-add play_chainsetup
     c-add 1st_chain
@@ -106,4 +109,4 @@ if __name__ == '__main__':
     e("""stop
          cs-disconnect""")
 
-    print "Chain operator status: ", e("cop-status")
+    print("Chain operator status: %s" % e("cop-status"))
