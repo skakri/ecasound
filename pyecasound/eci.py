@@ -11,6 +11,7 @@ from __future__ import print_function
 
 import pyeca as _pyeca
 
+
 class ECIError(Exception):
     def __init__(self, what):
         Exception.__init__(self, what)
@@ -18,6 +19,7 @@ class ECIError(Exception):
 
     def __str__(self):
         return '<ECIException %s>' % self.what
+
 
 class ECI:
     """An ECI is and ECA Control Interface object.
@@ -40,7 +42,7 @@ class ECI:
         self.e = _pyeca.ECA_CONTROL_INTERFACE(*args)
 
     def __call__(self, cmd, f=None):
-        if f != None:
+        if f:
             self.e.command_float_arg(cmd, f)
         else:
             if isinstance(cmd, list) or isinstance(cmd, tuple):
@@ -77,13 +79,14 @@ class ECI:
             raise ECIError("unknown return type '%s'!" % t)
 
 if __name__ == '__main__':
-    import time, sys
+    import sys
+    import time
 
     file = sys.argv[1]
     e = ECI()
 
     # uncomment to raise an error :)
-    #e('foo')
+    # e('foo')
 
     e("""
     cs-add play_chainsetup

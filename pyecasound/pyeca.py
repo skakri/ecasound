@@ -41,4 +41,4 @@ if hasattr(sys, 'version_info'):  # attribute available from python 2.0
         except (TypeError, AttributeError):
             pass
 
-from ecacontrol import *
+from ecacontrol import *  # nopep8

@@ -13,6 +13,12 @@ import os
 import signal
 import time
 
+
+__all__ = [
+    'ECA_CONTROL_INTERFACE',
+    'EIAM',
+]
+
 authors = """Kai Vehmanen, Eric S. Tiedemann and Janne Halttunen."""
 
 if sys.hexversion < 0x02040000:
@@ -71,7 +77,12 @@ class ECA_CONTROL_INTERFACE:
 
     def _read_eca(self):
         buffer = ''
-        while select([self.eca.stdout.fileno()], [], [self.eca.stdout.fileno()], 0.01)[0]:
+        while select(
+            [self.eca.stdout.fileno()],
+            [],
+            [self.eca.stdout.fileno()],
+            0.01
+        )[0]:
             buffer += self.eca.stdout.read(1).decode('utf-8')
         return buffer
 
@@ -145,8 +156,14 @@ class ECA_CONTROL_INTERFACE:
 
         ecasound_binary = os.environ.get('ECASOUND', 'ecasound')
 
-        p = subprocess.Popen(ecasound_binary + ' -c -d:256 2>/dev/null',
-                             shell=True, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+        p = subprocess.Popen(
+            ecasound_binary + ' -c -d:256 2>/dev/null',
+            shell=True,
+            bufsize=0,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            close_fds=True
+        )
         _ecasound.append(p)
 
         self.eca = _ecasound[-1]
@@ -226,7 +243,10 @@ class ECA_CONTROL_INTERFACE:
             return self._parse_response()
 
     def error(self):
-        """Return true if error has occured during the execution of last EIAM command"""
+        """Return true if error has occured during the execution of last \
+        EIAM command
+
+        """
         return self._type == 'e'
 
     def last_error(self):
@@ -280,7 +300,10 @@ def handler(*args):
     print('AARGH!')
     raise Exception('killing me not so softly')
 
-expand = re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)\r\n\r\n.*', re.MULTILINE | re.S)
+expand = re.compile(
+    '256 ([0-9]{1,5}) (.+)\r\n(.*)\r\n\r\n.*',
+    re.MULTILINE | re.S
+)
 
 
 def expand_eiam_response(st):
@@ -292,7 +315,10 @@ def expand_eiam_response(st):
     m = expand.search(st)
     return m
 
-parse = re.compile('256 ([0-9]{1,5}) (.+)\r\n(.*)', re.MULTILINE | re.S)
+parse = re.compile(
+    '256 ([0-9]{1,5}) (.+)\r\n(.*)',
+    re.MULTILINE | re.S
+)
 
 
 def parse_eiam_response(st, m=None):
@@ -316,14 +342,17 @@ def parse_eiam_response(st, m=None):
     if m and len(m.groups()) == 3:
         # print('received=%s, expected=%s' % (len(m.group(3)), m.group(1)))
         if int(m.group(1)) != len(m.group(3)):
-            print('(pyeca) Response length error. Received %s, expected for %s.' % (len(m.group(3)), m.group(1)))
+            print(
+                '(pyeca) Response length error. '
+                'Received %s, expected for %s.' % (len(m.group(3)), m.group(1))
+            )
             # print('g=%s' % m.group(3))
             return 'e', 'Response length error.'
 
     if m:
-        return (m.group(2), m.group(3))
+        return m.group(2), m.group(3)
 
-    return 'e',''
+    return 'e', ''
 
 
 class base:

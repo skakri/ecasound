@@ -15,13 +15,13 @@ import os
 # select pyeca implementation to use
 
 # test the default implementation
-from pyeca import *
+from pyeca import ECA_CONTROL_INTERFACE
 
 # test the native Python implementation
-# from ecacontrol import *
+# from ecacontrol import ECA_CONTROL_INTERFACE
 
 # test the C implementation
-# from pyecasound import *
+# from pyecasound import ECA_CONTROL_INTERFACE
 
 # ---
 # configuration variables
@@ -67,14 +67,14 @@ while 1 and e.last_type() != 'e':
 
     if debuglevel > 0:
         sys.stderr.write('.')
-            
+
     # some commands that return a lot
     # of return data
     e.command("cop-register")
     e.command("aio-register")
     e.command("int-cmd-list")
-    
-    total_cmds = total_cmds + 4
+
+    total_cmds += 4
 
 if e.last_type() == 'e':
     print('Ended to error: %s' % e.last_error())
@@ -84,7 +84,9 @@ else:
     e.command("cs-disconnect")
 
 if debuglevel == 2:
-    sys.stderr.write('\nprocessing speed: ' + str(total_cmds / runlen) + ' cmds/second.\n')
+    sys.stderr.write(
+        '\nprocessing speed: ' + str(total_cmds / runlen) + ' cmds/second.\n'
+    )
 
 if debuglevel > 0:
     sys.stderr.write('\n')

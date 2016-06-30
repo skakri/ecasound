@@ -15,13 +15,13 @@ import os
 # select pyeca implementation to use
 
 # test the default implementation
-from pyeca import *
+from pyeca import ECA_CONTROL_INTERFACE
 
 # test the native Python implementation
-# from ecacontrol import *
+# from ecacontrol import ECA_CONTROL_INTERFACE
 
 # test the C implementation
-# from pyecasound import *
+# from pyecasound import ECA_CONTROL_INTERFACE
 
 # ---
 # configuration variables
@@ -62,18 +62,21 @@ total_cmds = 0
 while 1 and e.last_type() != 'e':
     e.command("get-position")
     curpos = e.last_float()
-    if curpos > runlen or e.last_type() == 'e': break
+    if curpos > runlen or e.last_type() == 'e':
+        break
+
     e.command("copp-get")
     if debuglevel == 2:
-        #print curpos, e.last_float()
-        #if curpos == None:
-        #    curpos = 0.0
-        sys.stderr.write('%6.2f %6.4f\r' % (curpos,e.last_float()))
+        # print curpos, e.last_float()
+        # if curpos == None:
+        #     curpos = 0.0
+
+        sys.stderr.write('%6.2f %6.4f\r' % (curpos, e.last_float()))
     else:
         if debuglevel == 1:
             sys.stderr.write('.')
-            
-    total_cmds = total_cmds + 2
+
+    total_cmds += 2
 
 if e.last_type() == 'e':
     print('Ended to error: %s' % e.last_error())
@@ -83,7 +86,9 @@ else:
     e.command("cs-disconnect")
 
 if debuglevel == 2:
-    sys.stderr.write('\nprocessing speed: ' + str(total_cmds / runlen) + ' cmds/second.\n')
+    sys.stderr.write(
+        '\nprocessing speed: ' + str(total_cmds / runlen) + ' cmds/second.\n'
+    )
 
 if debuglevel > 0:
     sys.stderr.write('\n')
