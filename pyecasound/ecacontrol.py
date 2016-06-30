@@ -31,7 +31,7 @@ eci_str_sync_lost = 'Connection to the processing engine was lost.\n'
 class ECA_CONTROL_INTERFACE:
     def __init__(self, verbose=1):
         """Instantiate new ECI session
-        
+
         verbose: set this false to get rid of startup-messages
         """
 
@@ -41,7 +41,7 @@ class ECA_CONTROL_INTERFACE:
         self._timeout = 5  # in seconds
         self._resp = {}
         self.initialize()
-        
+
     def __call__(self, cmd, f=None):
         if f:
             val = self.command_float_arg(cmd, f)
@@ -53,28 +53,28 @@ class ECA_CONTROL_INTERFACE:
                     c = c.strip()
                     if c:
                         v.append(self.command(c))
-                    
+
                         if self.error():
                             raise Exception(v[-1])
 
                 val = str.join('\n', map(str, v))
             else:
                 val = self.command(cmd)
-                    
+
         if self.error():
             raise Exception(val)
-        
-        return val            
+
+        return val
 
     def _readline(self):
         return self.eca.stdout.readline().strip().decode('utf-8')
-        
+
     def _read_eca(self):
         buffer = ''
         while select([self.eca.stdout.fileno()], [], [self.eca.stdout.fileno()], 0.01)[0]:
             buffer += self.eca.stdout.read(1).decode('utf-8')
         return buffer
-    
+
     def _parse_response(self):
         tm = ''
         r = ()
@@ -114,10 +114,10 @@ class ECA_CONTROL_INTERFACE:
             r = None
         else:
             self._type = r[0]
-            
+
             if self._cmd in type_override.keys():
                 self._type = type_override[self._cmd]
-            
+
             if self._type == 'S':
                 self._resp[self._type] = r[1].split(',')
             elif self._type == 'Sn':
@@ -137,10 +137,10 @@ class ECA_CONTROL_INTERFACE:
 
     def initialize(self):
         """Reserve resources"""
-                
+
         # if_ecasound is not None:
         #     self.cleanup()  # exit previous ecasound session cleanly
-           
+
         global _ecasound
 
         ecasound_binary = os.environ.get('ECASOUND', 'ecasound')
@@ -148,55 +148,55 @@ class ECA_CONTROL_INTERFACE:
         p = subprocess.Popen(ecasound_binary + ' -c -d:256 2>/dev/null',
                              shell=True, bufsize=0, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
         _ecasound.append(p)
-        
+
         self.eca = _ecasound[-1]
-        
+
         lines = ''
-        
+
         lines = lines + self._readline() + '\n'
 
         version = self._readline()
-            
+
         s = version.find('ecasound v')
 
         if float(version[s+10:s+13]) >= 2.2:
             lines = lines + version+'\n'
         else:
             raise RuntimeError('ecasound version 2.2 required!')
-        
+
         lines = lines + self._readline() + '\n'
-        
+
         if self.verbose:
             print(lines)
             print(__doc__)
             print('by %s' % authors)
             print('\n(to get rid of this message, pass zero to instance init)')
-            
+
         self.command('int-output-mode-wellformed')
         # self._read_eca()
         # self.command('debug 256')
-        
+
     def cleanup(self):
         """Free all reserved resources"""
-        
+
         self.eca.stdin.write('quit\n'.encode('utf-8'))
 
         os.kill(self.eca.pid, signal.SIGTERM)
-                
+
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(2)
-        
+
         try:
             return self.eca.wait()
         except:
             pass
-        
+
         signal.alarm(0)
         os.kill(self.eca.pid, signal.SIGKILL)
 
     def command(self, cmd):
         """Issue an EIAM command"""
-        
+
         cmd = cmd.strip()
 
         if cmd:
@@ -205,13 +205,13 @@ class ECA_CONTROL_INTERFACE:
 
             self.eca.stdin.write(cmd.encode('utf-8'))
             return self._parse_response()
-        
+
     def command_float_arg(self, cmd, f=None):
         """Issue an EIAM command
-        
-        This function can be used instead of command(string), 
+
+        This function can be used instead of command(string),
         if the command in question requires exactly one numerical parameter."""
-        
+
         cmd = cmd.strip()
 
         if cmd:
@@ -224,48 +224,48 @@ class ECA_CONTROL_INTERFACE:
             self.eca.stdin.write(cmd.encode('utf-8'))
 
             return self._parse_response()
-            
+
     def error(self):
         """Return true if error has occured during the execution of last EIAM command"""
         return self._type == 'e'
-        
+
     def last_error(self):
         """Return a string describing the last error"""
-        
+
         if self.error():
             return self._resp.get('e')
-        else: 
+        else:
             return ''
-        
+
     def last_float(self):
         """Return the last floating-point return value"""
         return self._resp.get('f')
-    
+
     def last_integer(self):
         """Return the last integer return value
-        
+
         This function is also used to return boolean values."""
         return self._resp.get('i')
-    
+
     def last_long_integer(self):
         """Return the last long integer return value
-        
-        Long integers are used to pass values like 'length_in_samples' 
-        and 'length_in_bytes'.  It's implementation specific whether there's 
+
+        Long integers are used to pass values like 'length_in_samples'
+        and 'length_in_bytes'.  It's implementation specific whether there's
         any real difference between integers and long integers."""
         return self._resp.get('li')
-    
+
     def last_string(self):
         """Return the last string return value"""
         return self._resp.get('s')
-    
+
     def last_string_list(self):
         """Return the last collection of strings (one or more strings)"""
         return self._resp.get('S')
-    
+
     def last_type(self):
         return self._type
-    
+
     def current_event(self):
         """** not implemented **"""
 
